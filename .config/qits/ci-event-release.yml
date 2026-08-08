@@ -1,0 +1,42 @@
+# The release pipeline: this repository reacts to its OWN release and publishes the version-tagged
+# image. That is not a loop — `SCMRelease` says only "source control has this version", and
+# qits-workspaces publishes it. qits-ci turns this green run into one `SoftwareRelease` per entry
+# under `artifacts:`, and nothing here listens for that.
+#
+# The repository has no version file. A qits release creates the version and the annotated tag, then
+# supplies the same version in the event.
+event: SCMRelease
+when:
+  - repository: { exact: qits-oci-postgresql }
+
+# A DECLARATION, NOT A REPORT. qits-ci cannot see what the step pushed; it announces on the strength
+# of this line. Keep it true.
+artifacts:
+  - { type: docker, name: qits/qits-oci-postgresql }
+
+steps:
+  - image: qits/build-images/ci-base:latest
+    docker: true
+    timeout-seconds: 3600
+    script: |
+      set -eu
+
+      # The payload reaches the container verbatim as one string in $QITS_EVENT_PAYLOAD — there is
+      # no per-field projection. ci-base carries jq; the case guard refuses a malformed or absent
+      # value before any registry tag is created, since a CalVer is only digits and dots.
+      version=$(printf '%s' "$QITS_EVENT_PAYLOAD" | jq -r '.version')
+      case "$version" in
+        ''|null|*[!0-9.]*) echo "SCMRelease carries no valid CalVer" >&2; exit 1 ;;
+      esac
+
+      # THE TAG IS THE CHECKOUT TARGET. An event-triggered run is cloned at the head of main, which
+      # a later push moves; the tag does not. The clone is shallow and carries no tags, hence the
+      # explicit refspec, and the URL rather than `origin` because every address arrives as
+      # environment. `checkout --detach` peels the annotated tag to its commit.
+      git fetch "$QITS_CI_REPOSITORY_URL" "refs/tags/$version:refs/tags/$version"
+      git checkout --detach "$version"
+
+      ref="$QITS_REGISTRY/$QITS_IMAGE_REPOSITORY/qits-oci-postgresql:$version"
+      docker build -t "$ref" -f Dockerfile .
+      docker push "$ref"
+      docker rmi "$ref" || true

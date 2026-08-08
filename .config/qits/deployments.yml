@@ -1,0 +1,16 @@
+# How qits-platform-deployments deploys this repo. It reads this file from the git host at
+# the built sha, so the answer travels with the commit.
+#
+# ENVIRONMENT service: every environment runs its own database. Today prod is the only
+# environment, so it deploys from prod's branch.
+deployment_target: environment
+deploy_branches: environment/prod
+
+# NOT AN HTTP SERVICE, so the derived health path cannot work: the gate curls localhost:8080 inside
+# the container and nothing there answers. `health_cmd` replaces that gate with a command the
+# deployer runs in-container instead.
+#
+# ORDERING: the deployer has to know this key BEFORE this repository's first deploy. The spec parser
+# is strict — an unknown key fails the deployment — so a deployer that predates the key rejects this
+# file outright. The release flow's reader is lenient, so releases are unaffected either way.
+health_cmd: pg_isready -U postgres

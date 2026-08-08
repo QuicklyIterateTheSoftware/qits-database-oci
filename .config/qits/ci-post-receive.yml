@@ -1,0 +1,18 @@
+# The push pipeline: build the image and push it under the built sha.
+#
+# THE TAG IS THE CONTRACT. qits-platform-deployments derives the image it runs from the repository
+# id and the sha of the green build, so the name segment has to be exactly `qits-oci-postgresql`.
+# A different segment builds fine and deploys nothing.
+#
+# No `--network` flag: nothing in this build dials the platform. The base image is pulled through
+# the OCI mirror by the daemon, not by the build.
+steps:
+  - image: qits/build-images/ci-base:latest
+    docker: true
+    timeout-seconds: 3600
+    script: |
+      set -eu
+      ref="$QITS_REGISTRY/$QITS_IMAGE_REPOSITORY/qits-oci-postgresql:$QITS_CI_SHA"
+      docker build -t "$ref" -f Dockerfile .
+      docker push "$ref"
+      docker rmi "$ref" || true
