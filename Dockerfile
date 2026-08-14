@@ -3,7 +3,7 @@
 #
 # The base is pulled through the platform's OCI mirror, never from docker.io directly. The `hub`
 # namespace maps to docker.io, and a single-component name under it means `library/`.
-FROM localhost:8082/hub/library/postgres:18.4
+FROM mirror.dev.localhost:8080/hub/library/postgres:18.4
 
 # BARE-BOOT PLACEHOLDER, not a credential, and dead on the platform from the very first boot. The
 # image needs a password to start at all, so `docker run` with nothing else set still works for a
