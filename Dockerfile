@@ -16,13 +16,15 @@ ENV POSTGRES_PASSWORD=qits-poc
 # Minimal tuning for the blob-heavy workload this database is being taken to: multi-GiB ingest
 # writes a lot of WAL.
 #   shared_buffers=512MB              modest bump from the 128MB default; the rest stays page cache
-#   max_wal_size=4GB                  fewer forced checkpoints during a long bulk write
+#   max_wal_size=1GB                  a checkpoint per GiB of WAL; 4GB held ~3.5 GB of WAL on a
+#                                     150 GB host for nothing (measured 2026-08-21) — the
+#                                     multi-GiB registry ingest is chunked and does not need it
 #   wal_compression=lz4               near-free on CPU, large cut in WAL volume
 #   checkpoint_completion_target=0.9  spread checkpoint I/O instead of stalling on a spike
 # Nothing else is configured here, and there are no init scripts: roles and databases are created
 # by qits-deployments' `resources:` provisioning, not by this image.
 CMD ["postgres", \
      "-c", "shared_buffers=512MB", \
-     "-c", "max_wal_size=4GB", \
+     "-c", "max_wal_size=1GB", \
      "-c", "wal_compression=lz4", \
      "-c", "checkpoint_completion_target=0.9"]
