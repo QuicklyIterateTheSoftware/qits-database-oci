@@ -7,10 +7,21 @@
 # supplies the same version in the event.
 event: SCMRelease
 when:
-  - repository: { exact: qits-oci-postgresql }
+  # The new repository name. `repository` on SCMRelease is the PUBLIC name — measured live on
+  # 2026-08-29, when a sibling's train followed this same field — so a rename moves this line and
+  # the pipeline stops firing the moment it does not.
+  - repository: { exact: qits-database-oci }
 
 # A DECLARATION, NOT A REPORT. qits-ci cannot see what the step pushed; it announces on the strength
 # of this line. Keep it true.
+#
+# THE IMAGE NAME IS NOT THE REPOSITORY NAME ANY MORE, and it must not become one. Every
+# environment's database container, volume and DNS alias is spelled `qits-oci-postgresql`, and the
+# bootstrap writes that name into every consumer's JDBC url. So the published coordinate stays put
+# while the repository is renamed — and `deployments.yml` must pin `application: qits-oci-postgresql`
+# in the same campaign, because the deployer derives the image it runs from the application name and
+# would otherwise start looking for a `qits-database-oci` image nothing publishes. That key is
+# beside this file now.
 artifacts:
   - { type: docker, name: qits/qits-oci-postgresql }
 

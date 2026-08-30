@@ -11,6 +11,14 @@
 # listens to the built branch.
 deployment_target: environment
 
+# THE APPLICATION NAME OUTLIVES THE REPOSITORY NAME, and this key is what pins it. The repository is
+# renamed qits-database-oci; the application stays `qits-oci-postgresql`, which is the name every
+# environment already spells — the swarm service and its wire alias, the container, the data volume,
+# the image `qits/qits-oci-postgresql:<sha>` both pipelines push, and the host in every consumer's
+# JDBC url the bootstrap writes. Drop this key and the deployer derives all of that from the new
+# repository name instead, looking for an image nothing publishes and a database nobody has.
+application: qits-oci-postgresql
+
 # NOT AN HTTP SERVICE, so the derived health path cannot work: the gate curls localhost:8080 inside
 # the container and nothing there answers. `health_cmd` replaces that gate with a command the
 # deployer runs in-container instead.
