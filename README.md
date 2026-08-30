@@ -1,4 +1,4 @@
-# qits-oci-postgresql
+# qits-database-oci
 
 The platform's PostgreSQL image, and the platform's first **deployable image**: a repository that
 holds a Dockerfile and nothing else, yet is deployed as a service exactly like a Quarkus component.
