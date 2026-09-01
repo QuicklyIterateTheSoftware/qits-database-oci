@@ -1,8 +1,12 @@
 version: 1
 actions:
-  - id: svc-fix-empty
-    name: build plane resolves central directly (empty)
+  - id: svc-disable
+    name: disable central mirror on qits-ci (both planes go direct)
     execute: |
       set -ex
-      docker service update --env-rm QITS_MIRROR_MAVEN_CENTRAL_BUILD_URL dev-qits-ci
-      docker service inspect dev-qits-ci --format '{{range .Spec.TaskTemplate.ContainerSpec.Env}}{{println .}}{{end}}' | grep -i MIRROR_MAVEN_CENTRAL || echo "central build env removed -> direct"
+      docker service update \
+        --env-add QITS_MIRROR_MAVEN_CENTRAL_ENABLED=false \
+        --env-add QITS_MIRROR_MAVEN_CENTRAL_BUILD_URL= \
+        dev-qits-ci
+      docker service inspect dev-qits-ci --format '{{range .Spec.TaskTemplate.ContainerSpec.Env}}{{println .}}{{end}}' | grep -i MIRROR_MAVEN || echo "no mirror env"
+      echo DISABLE_DONE
