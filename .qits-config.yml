@@ -1,26 +1,8 @@
 version: 1
 actions:
-  - id: svc-fix
-    name: set qits-ci central build url
+  - id: svc-fix-empty
+    name: build plane resolves central directly (empty)
     execute: |
       set -ex
-      docker service update --env-add QITS_MIRROR_MAVEN_CENTRAL_BUILD_URL="$MIRROR_URL" dev-qits-ci
-    environment:
-      MIRROR_URL: http://127.0.0.1:8082/artifacts/maven/central
-  - id: probe
-    name: probe mirror reachability from host netns (as a build sees it)
-    execute: |
-      P=io/quarkus/platform/quarkus-bom/3.34.6/quarkus-bom-3.34.6.pom
-      img=registry.dev.localhost:8080/qits/build-images/maven-base:latest
-      for url in http://127.0.0.1:8082/artifacts/maven/central \
-                 http://qits-platform-mirror:8080/artifacts/maven/central \
-                 http://mirror.dev.localhost:8080/artifacts/maven/central \
-                 http://mirror.dev.internal:8080/artifacts/maven/central ; do
-        code=$(docker run --rm --network host "$img" sh -c "curl -s -m 6 -o /dev/null -w '%{http_code}' $url/$P" 2>/dev/null || echo ERR)
-        echo "HOSTNET $url -> $code"
-      done
-      echo "--- edge published ports / host listeners ---"
-      docker service ls --format '{{.Name}}' | while read s; do
-        p=$(docker service inspect "$s" --format '{{json .Endpoint.Ports}}' 2>/dev/null)
-        [ "$p" != "null" ] && echo "$s ports: $p"
-      done
+      docker service update --env-rm QITS_MIRROR_MAVEN_CENTRAL_BUILD_URL dev-qits-ci
+      docker service inspect dev-qits-ci --format '{{range .Spec.TaskTemplate.ContainerSpec.Env}}{{println .}}{{end}}' | grep -i MIRROR_MAVEN_CENTRAL || echo "central build env removed -> direct"
