@@ -1,12 +1,11 @@
 version: 1
 actions:
-  - id: svc-disable
-    name: disable central mirror on qits-ci (both planes go direct)
+  - id: disable2
+    name: set enabled=false only
     execute: |
       set -ex
-      docker service update \
-        --env-add QITS_MIRROR_MAVEN_CENTRAL_ENABLED=false \
-        --env-add QITS_MIRROR_MAVEN_CENTRAL_BUILD_URL= \
-        dev-qits-ci
-      docker service inspect dev-qits-ci --format '{{range .Spec.TaskTemplate.ContainerSpec.Env}}{{println .}}{{end}}' | grep -i MIRROR_MAVEN || echo "no mirror env"
-      echo DISABLE_DONE
+      docker service update --env-add QITS_MIRROR_MAVEN_CENTRAL_ENABLED=false dev-qits-ci
+  - id: showenv
+    name: show qits-ci mirror env
+    execute: |
+      docker service inspect dev-qits-ci --format '{{range .Spec.TaskTemplate.ContainerSpec.Env}}{{println .}}{{end}}' | grep -i MIRROR_MAVEN || echo NONE
