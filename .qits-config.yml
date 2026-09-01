@@ -1,0 +1,20 @@
+version: 1
+actions:
+  - id: svc-list
+    name: list swarm services and qits-ci env
+    execute: |
+      set -x
+      docker service ls --format '{{.Name}}'
+      svc=$(docker service ls --format '{{.Name}}' | grep -E '(^|[-_])(dev-)?qits-ci($|[-_])' | grep -viE 'frontend|daemon|spa' | head -1)
+      echo "TARGET_SERVICE=$svc"
+      docker service inspect "$svc" --format '{{range .Spec.TaskTemplate.ContainerSpec.Env}}{{println .}}{{end}}' | grep -i MIRROR_MAVEN_CENTRAL || echo "no central env currently set"
+  - id: svc-fix
+    name: point qits-ci central build url at the loopback mirror
+    execute: |
+      set -ex
+      svc=$(docker service ls --format '{{.Name}}' | grep -E '(^|[-_])(dev-)?qits-ci($|[-_])' | grep -viE 'frontend|daemon|spa' | head -1)
+      echo "TARGET_SERVICE=$svc"
+      docker service update \
+        --env-add QITS_MIRROR_MAVEN_CENTRAL_BUILD_URL=http://127.0.0.1:8082/artifacts/maven/central \
+        "$svc"
+      echo "UPDATE_DONE $svc"
