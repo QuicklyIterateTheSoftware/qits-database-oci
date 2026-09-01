@@ -1,19 +1,26 @@
 version: 1
 actions:
-  - id: svc-list
-    name: list swarm services and qits-ci env
-    execute: |
-      docker service ls --format '{{.Name}}'
   - id: svc-fix
-    name: point qits-ci central build url at the loopback mirror
+    name: set qits-ci central build url
     execute: |
       set -ex
-      docker service update --env-add QITS_MIRROR_MAVEN_CENTRAL_BUILD_URL=http://127.0.0.1:8082/artifacts/maven/central dev-qits-ci
-  - id: mirror-state
-    name: inspect the mirror service and its published port
+      docker service update --env-add QITS_MIRROR_MAVEN_CENTRAL_BUILD_URL="$MIRROR_URL" dev-qits-ci
+    environment:
+      MIRROR_URL: http://127.0.0.1:8082/artifacts/maven/central
+  - id: probe
+    name: probe mirror reachability from host netns (as a build sees it)
     execute: |
-      set -x
-      docker service ps qits-platform-mirror --no-trunc --format '{{.Name}} {{.CurrentState}} {{.Error}}' | head
-      docker service inspect qits-platform-mirror --format '{{json .Endpoint.Ports}}'
-      docker service inspect qits-platform-mirror --format '{{.Spec.TaskTemplate.ContainerSpec.Image}}'
-      curl -s -m 5 -o /dev/null -w "loopback 8082 central pom: %{http_code}\n" http://127.0.0.1:8082/artifacts/maven/central/io/quarkus/platform/quarkus-bom/3.34.6/quarkus-bom-3.34.6.pom || echo "loopback refused"
+      P=io/quarkus/platform/quarkus-bom/3.34.6/quarkus-bom-3.34.6.pom
+      img=registry.dev.localhost:8080/qits/build-images/maven-base:latest
+      for url in http://127.0.0.1:8082/artifacts/maven/central \
+                 http://qits-platform-mirror:8080/artifacts/maven/central \
+                 http://mirror.dev.localhost:8080/artifacts/maven/central \
+                 http://mirror.dev.internal:8080/artifacts/maven/central ; do
+        code=$(docker run --rm --network host "$img" sh -c "curl -s -m 6 -o /dev/null -w '%{http_code}' $url/$P" 2>/dev/null || echo ERR)
+        echo "HOSTNET $url -> $code"
+      done
+      echo "--- edge published ports / host listeners ---"
+      docker service ls --format '{{.Name}}' | while read s; do
+        p=$(docker service inspect "$s" --format '{{json .Endpoint.Ports}}' 2>/dev/null)
+        [ "$p" != "null" ] && echo "$s ports: $p"
+      done
