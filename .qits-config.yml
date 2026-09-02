@@ -1,0 +1,11 @@
+version: 1
+actions:
+  - id: inspect-mirror
+    name: inspect the running mirror image and route
+    execute: |
+      set -x
+      docker service inspect qits-platform-mirror --format '{{.Spec.TaskTemplate.ContainerSpec.Image}}'
+      docker service ps qits-platform-mirror --no-trunc --format '{{.CurrentState}} | {{.Image}} | {{.Error}}' | head -4
+      cid=$(docker ps --filter name=qits-platform-mirror --format '{{.ID}}' | head -1)
+      echo "container=$cid"
+      docker exec "$cid" sh -c 'wget -qO- -S http://127.0.0.1:8080/mirror/maven/central/io/quarkus/platform/quarkus-bom/3.34.6/quarkus-bom-3.34.6.pom 2>&1 | head -4' 2>&1 | head -6 || echo "exec/wget failed"
