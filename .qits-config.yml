@@ -1,11 +1,12 @@
 version: 1
 actions:
-  - id: inspect-mirror
-    name: inspect the running mirror image and route
+  - id: diag
+    name: mirror deploy diagnosis
     execute: |
-      set -x
-      docker service inspect qits-platform-mirror --format '{{.Spec.TaskTemplate.ContainerSpec.Image}}'
-      docker service ps qits-platform-mirror --no-trunc --format '{{.CurrentState}} | {{.Image}} | {{.Error}}' | head -4
-      cid=$(docker ps --filter name=qits-platform-mirror --format '{{.ID}}' | head -1)
-      echo "container=$cid"
-      docker exec "$cid" sh -c 'wget -qO- -S http://127.0.0.1:8080/mirror/maven/central/io/quarkus/platform/quarkus-bom/3.34.6/quarkus-bom-3.34.6.pom 2>&1 | head -4' 2>&1 | head -6 || echo "exec/wget failed"
+      set +e
+      echo "=== full task history ==="
+      docker service ps qits-platform-mirror --no-trunc --format '{{.CurrentState}} | {{.Image}} | {{.Error}}' 2>/dev/null | head -8
+      echo "=== does my image (3cfd9711) exist in the registry? ==="
+      docker manifest inspect registry.dev.localhost:8080/qits/qits-platform-mirror:3cfd9711f906b1bc141e7884a3dc980a4d91744b >/dev/null 2>&1 && echo "MY IMAGE EXISTS" || echo "MY IMAGE MISSING (build never pushed it)"
+      echo "=== newest mirror tags in registry ==="
+      docker exec $(docker ps --filter name=qits-platform-mirror -q | head -1) sh -c 'echo n/a' 2>/dev/null
