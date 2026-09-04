@@ -1,6 +1,8 @@
 # The release pipeline: this repository reacts to its OWN release and publishes the version-tagged
 # image. That is not a loop — `SCMRelease` says only "source control has this version", and
-# qits-workspaces publishes it. qits-ci turns this green run into one `SoftwareRelease` per entry
+# qits-projects' Auto Release publishes it (SCMRelease, not SCMPublishTag: the git host's tag
+# primitive fires no post-receive and announces nothing). qits-ci turns this green run into one
+# `SoftwareRelease` per entry
 # under `artifacts:`, and nothing here listens for that.
 #
 # The repository has no version file. A qits release creates the version and the annotated tag, then

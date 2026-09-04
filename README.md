@@ -4,21 +4,24 @@ The platform's PostgreSQL image, and the platform's first **deployable image**: 
 holds a Dockerfile and nothing else, yet is deployed as a service exactly like a Quarkus component.
 
 That is the whole point of it. A database is not a qits application, but it needs the same things an
-application needs — a build per commit, a version to name, an environment to run in, and an address
-peers can dial. Giving it the ordinary lifecycle costs one Dockerfile and three config files, and
+application needs — a build a change has to pass, a version to name, an environment to run in, and
+an address peers can dial. Giving it the ordinary lifecycle costs one Dockerfile and three config files, and
 costs the platform no new concept at all.
 
 ## Lifecycle
 
-1. **Push** to `main` — `.config/qits/ci-post-receive.yml` builds the image and pushes it under the
-   built sha.
-2. **Release** — qits-workspaces stamps a CalVer, tags the commit and publishes `SCMRelease`.
-   `.config/qits/ci-event-release.yml` builds the tagged commit, pushes the version tag, and its
-   green run makes qits-ci announce one `SoftwareRelease`.
-3. **Promotion** — the release moves `environment/prod`, the branch named in
-   `.config/qits/deployments.yml`.
-4. **Deploy** — that push is an ordinary CI-hot build, and the environment listening to the branch
-   deploys the sha-tagged image.
+1. **Release request** — `POST /projects/api/repositories/<repoId>/release-requests`, naming a
+   branch and a summary. qits-projects folds `main` and the named branches onto `release/<id>` and
+   refolds whenever the set changes. Nothing merges and nothing releases at that call.
+2. **QA** — `.config/qits/ci-event-release-request.yml` builds that fold and pushes the image under
+   the merged sha. Every step in it is gating, and the release will not proceed without a green
+   verdict on the fold. Nothing builds on a push any more; there is no push pipeline.
+3. **Release** — qits-projects' Auto Release stamps a CalVer, tags the commit and publishes
+   `SCMRelease`. `.config/qits/ci-event-release.yml` builds the tagged commit, pushes the version
+   tag, and its green run makes qits-ci announce one `SoftwareRelease`.
+4. **Deploy** — qits-platform-deployments opens a Deployment Request and deploys the version
+   coordinate, `qits/qits-oci-postgresql:<version>`. There is no promotion and no environment
+   branch; `main` is finalized once the deployment succeeds.
 
 Nothing in that list is special-cased for this repository.
 

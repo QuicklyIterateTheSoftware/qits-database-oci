@@ -1,20 +1,22 @@
 # How qits-platform-deployments deploys this repo. It reads this file from the git host at
 # the built sha, so the answer travels with the commit.
 #
-# CARRYING THE FILE AT ALL is the other thing it says. qits-workspaces reads it on a release to
-# decide whether this repository deploys — a library or an SPA carries none and its release is
-# the trunk push alone — and then promotes onto the branch it is configured with
-# (`qits.workspaces.release.entry-branch`). `deploy_branches` used to name that branch here, in
-# thirteen copies of one platform-wide answer, and a release pushed onto every entry it named.
+# CARRYING THE FILE AT ALL is the other thing it says. The release flow reads it to decide whether
+# this repository deploys — a repo without one is finalized on `main` the moment it releases, and a
+# library or an SPA carries none. What a deploy pulls is the VERSION COORDINATE the release
+# published. There is no promotion and no branch to promote onto: the entry branch
+# (`qits.workspaces.release.entry-branch`) and the `deploy_branches` that used to name it here, in
+# thirteen copies of one platform-wide answer, went with the release door.
 #
-# ENVIRONMENT service: every environment runs its own database, deployed into whichever tier
-# listens to the built branch.
+# ENVIRONMENT service: every environment runs its own database, and each tier deploys the released
+# version coordinate on its own schedule.
 deployment_target: environment
 
 # THE APPLICATION NAME OUTLIVES THE REPOSITORY NAME, and this key is what pins it. The repository is
 # renamed qits-database-oci; the application stays `qits-oci-postgresql`, which is the name every
 # environment already spells — the swarm service and its wire alias, the container, the data volume,
-# the image `qits/qits-oci-postgresql:<sha>` both pipelines push, and the host in every consumer's
+# the image `qits/qits-oci-postgresql` both pipelines push — the QA pipeline under a fold's merged
+# sha, the release pipeline under the CalVer a deploy pulls — and the host in every consumer's
 # JDBC url the bootstrap writes. Drop this key and the deployer derives all of that from the new
 # repository name instead, looking for an image nothing publishes and a database nobody has.
 application: qits-oci-postgresql
