@@ -1,0 +1,16 @@
+version: 1
+actions:
+  - id: verify
+    name: verify build-plane mirror resolution
+    execute: |
+      set +e
+      echo "=== is dev-qits-ci running the flip release (c1925c8)? ==="
+      docker service inspect dev-qits-ci --format '{{.Spec.TaskTemplate.ContainerSpec.Image}}' 2>/dev/null
+      echo "=== BUILD-PATH TEST: host-network maven-base resolves a FRESH central artifact through /mirror with commissioned Basic ==="
+      img=registry.dev.localhost:8080/qits/build-images/maven-base:latest
+      # a small, likely-uncached artifact path
+      A=org/apache/commons/commons-collections4/4.4/commons-collections4-4.4.jar
+      docker run --rm --network host -e U="$QITS_COMMISSIONED_CLIENT_ID" -e P="$QITS_COMMISSIONED_CLIENT_SECRET" "$img" sh -c         "curl -s -m 30 -o /dev/null -w 'via /mirror edge authed: %{http_code} %{size_download}b\n' -u \"$U:$P\" http://mirror.dev.localhost:8080/mirror/maven/central/$A" 2>&1 | tail -2
+    environment:
+      QITS_COMMISSIONED_CLIENT_ID: "dyn-workspace-801-ZeUo3necefCkQVz4iw0HrA"
+      QITS_COMMISSIONED_CLIENT_SECRET: "d1D4I0kHa-D3LMhrQ8GClZt6wetvlMC4hMy_HHpp_Iw"
