@@ -25,3 +25,12 @@ application: qits-oci-postgresql
 # the container and nothing there answers. `health_cmd` replaces that gate with a command the
 # deployer runs in-container instead.
 health_cmd: pg_isready -U postgres
+
+# STOP-FIRST, because this application is a single writer on one data volume. The deployer's
+# default is start-first: the successor boots while the predecessor still runs. Two postgres
+# processes on the same data directory do not exclude each other across containers — the pid file
+# is stale to each of them — so on 2026-09-05 both wrote WAL into the same segment, the
+# predecessor's shutdown checkpoint was overwritten, and the cluster could not start until the
+# control file was repaired by hand. Stopping first costs a few seconds of downtime, which every
+# consumer already holds through (DB patience); overlapping costs the database.
+update_order: stop-first
