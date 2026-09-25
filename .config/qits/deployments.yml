@@ -8,10 +8,6 @@
 # (`qits.workspaces.release.entry-branch`) and the `deploy_branches` that used to name it here, in
 # thirteen copies of one platform-wide answer, went with the release door.
 #
-# ENVIRONMENT service: every environment runs its own database, and each tier deploys the released
-# version coordinate on its own schedule.
-deployment_target: environment
-
 # THE APPLICATION NAME OUTLIVES THE REPOSITORY NAME, and this key is what pins it. The repository is
 # renamed qits-database-oci; the application stays `qits-oci-postgresql`, which is the name every
 # environment already spells — the swarm service and its wire alias, the container, the data volume,
