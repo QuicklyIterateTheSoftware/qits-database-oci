@@ -21,10 +21,18 @@ ENV POSTGRES_PASSWORD=qits-poc
 #                                     multi-GiB registry ingest is chunked and does not need it
 #   wal_compression=lz4               near-free on CPU, large cut in WAL volume
 #   checkpoint_completion_target=0.9  spread checkpoint I/O instead of stalling on a spike
+#   max_connections=300               the default 100 is the ceiling the estate already sits at:
+#                                     every service holds its own pool, and a start-first rollout
+#                                     runs two pools for one service while the successor boots, so
+#                                     its Flyway got "remaining connection slots are reserved" and
+#                                     swarm rolled the deploy back (qits-edge twice and
+#                                     qits-workspaces once, 2026-09-27; ticket qits-522). ~10 MB per
+#                                     backend worst case, so 300 fits the 16 GB host with room.
 # Nothing else is configured here, and there are no init scripts: roles and databases are created
 # by qits-deployments' `resources:` provisioning, not by this image.
 CMD ["postgres", \
      "-c", "shared_buffers=512MB", \
      "-c", "max_wal_size=1GB", \
      "-c", "wal_compression=lz4", \
-     "-c", "checkpoint_completion_target=0.9"]
+     "-c", "checkpoint_completion_target=0.9", \
+     "-c", "max_connections=300"]
