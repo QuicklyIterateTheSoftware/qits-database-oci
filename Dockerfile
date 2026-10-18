@@ -1,9 +1,14 @@
 # The platform's PostgreSQL image. It adds almost nothing to the upstream image — the repository
 # exists so a database rides the same push/release/deploy lifecycle as every other component.
 #
-# The base is pulled through the platform's OCI mirror, never from docker.io directly. The `hub`
-# namespace maps to docker.io, and a single-component name under it means `library/`.
-FROM mirror.dev.localhost:8080/hub/library/postgres:18.4
+# The base is pulled through qits-mirror's pull-through cache, never from docker.io directly. The
+# `hub` namespace maps to docker.io, and a single-component name under it means `library/`.
+#
+# QITS_DOMAIN is the platform's public domain; the release recipes pass it with
+# `--opt build-arg:QITS_DOMAIN`. It is declared global, above this first FROM, so the FROM line
+# itself can read it.
+ARG QITS_DOMAIN=wohlben.eu
+FROM mirror.qits.${QITS_DOMAIN}/hub/library/postgres:18.4
 
 # BARE-BOOT PLACEHOLDER, not a credential, and dead on the platform from the very first boot. The
 # image needs a password to start at all, so `docker run` with nothing else set still works for a
