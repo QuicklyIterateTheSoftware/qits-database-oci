@@ -30,3 +30,12 @@ health_cmd: pg_isready -U postgres
 # control file was repaired by hand. Stopping first costs a few seconds of downtime, which every
 # consumer already holds through (DB patience); overlapping costs the database.
 update_order: stop-first
+
+# THE PLATFORM DATABASE'S DATA, declared here rather than in deployment config (qits-1391). A
+# private volume's name is derived as `<application>-<name>`, so `private:data` under
+# `application: qits-oci-postgresql` above is exactly `qits-oci-postgresql-data` — the volume the
+# bootstrap created and every environment has run on since. The name must not drift by a character:
+# docker answers an unknown volume name by creating an empty one, and an empty data directory is a
+# fresh cluster that passes `pg_isready`. The deployer drops the config mount of the same target,
+# and a live service already mounting this volume at this target is updated in place, not recreated.
+volumes: private:data:/var/lib/postgresql
