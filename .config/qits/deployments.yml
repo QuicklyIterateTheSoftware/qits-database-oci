@@ -39,3 +39,11 @@ update_order: stop-first
 # fresh cluster that passes `pg_isready`. The deployer drops the config mount of the same target,
 # and a live service already mounting this volume at this target is updated in place, not recreated.
 volumes: private:data:/var/lib/postgresql
+
+# ON BOTH NETWORKS, qits-net AND qits-private (qits-1980, task qits-2122): private services sit on
+# qits-private alone and reach this database by its wire alias, dev-qits-oci-postgresql, so it has
+# to be attached there too. It declares no route, so neither edge serves it; it is the one routeless
+# bridge between the two networks, and every database role keeps its own password. Changing the
+# networks recreates the service once (remove, wait for the old task to stop — qits-2118 refuses to
+# start a second postgres beside it on this volume — then create). Revert: delete this line.
+exposure: both
