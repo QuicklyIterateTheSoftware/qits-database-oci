@@ -1,0 +1,49 @@
+# THE PRIVATE POSTGRES, qits-oci-postgresql-private: the variant `deployments.yml` names with
+# `variants: private` (qits-2175). The deployer reads this file at the same sha as the main one and
+# deploys it beside it, from the same release and the same image.
+#
+# IT SERVES ONLY SERVICES WITH `exposure: private`. The public server above sits on both qits-net and
+# qits-private so a private consumer can still reach it; this one exists so a private service has a
+# database that never touches qits-net at all, and nothing with `exposure: both` or the default
+# routeless exposure is meant to use it.
+#
+# QITS-PRIVATE ALONE, WITH NO BRIDGE (owner ruling 2026-11-13, qits-2174): unlike the public server's
+# `exposure: both`, this application declares no second network. There is no routeless bridge to
+# qits-net here and none is coming — the bridge the public server holds is exactly what this variant
+# exists to avoid repeating for private-only data.
+#
+# THE DEPLOYER ITSELF HAS NO STANDING ACCESS to qits-private (qits-2175): the admin console, the
+# bootstrap CLI and every ordinary operator path run from qits-net. Reaching this server for anything
+# the deployer still needs to do in-network — provisioning a resource, a health probe outside the
+# in-container `health_cmd` — happens through a one-shot container placed on qits-private for that
+# single call, never through a standing connection.
+#
+# THE SAME ADMIN CREDENTIAL AS THE PUBLIC SERVER. There is no second superuser password to mint or
+# store: the bootstrap CLI and the deployer's run-args carry the one randomized `POSTGRES_PASSWORD`
+# that already applies to qits-oci-postgresql, unchanged. See README.md.
+application: qits-oci-postgresql-private
+
+# THE SAME IMAGE as the public server, qits/qits-oci-postgresql:<version>. There is nothing in the
+# image that tells the two apart — no QITS_VARIANT, no entrypoint branch — because a plain postgres
+# server does not need one: what differs between the two applications is entirely in this file, not
+# in the container.
+image: qits-oci-postgresql
+
+# PRIVATE ONLY. See the header above: qits-private and nothing else.
+exposure: private
+
+# THE SAME GATE AS THE PUBLIC SERVER, for the same reason: this is not an HTTP service, so the
+# derived health path cannot work, and `health_cmd` replaces it with an in-container command.
+health_cmd: pg_isready -U postgres
+
+# STOP-FIRST, for the same reason as the public server: a single writer on one data volume. Two
+# postgres processes on the same data directory do not exclude each other across containers, so the
+# successor must not start until the predecessor has stopped.
+update_order: stop-first
+
+# ITS OWN DATA, never the public server's. A private volume's name is derived as
+# `<application>-<name>`, so `private:data` under `application: qits-oci-postgresql-private` above is
+# `qits-oci-postgresql-private-data` — a volume of its own, distinct from the public server's
+# `qits-oci-postgresql-data`. The data directory layout is the same image's, so the postgres:18
+# mount-the-parent note in README.md applies here too.
+volumes: private:data:/var/lib/postgresql

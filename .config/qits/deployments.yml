@@ -47,3 +47,9 @@ volumes: private:data:/var/lib/postgresql
 # networks recreates the service once (remove, wait for the old task to stop — qits-2118 refuses to
 # start a second postgres beside it on this volume — then create). Revert: delete this line.
 exposure: both
+
+# A SECOND APPLICATION FROM THIS SAME IMAGE AND RELEASE (qits-2175): `deployments.private.yml`
+# deploys qits-oci-postgresql-private, the server on qits-private alone for services that must never
+# sit on the bridge above. The deployer reads that file at the same sha and deploys it beside this
+# one, from the same release; nothing here changes for it.
+variants: private

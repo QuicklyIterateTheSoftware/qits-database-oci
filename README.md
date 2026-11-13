@@ -25,11 +25,22 @@ costs the platform no new concept at all.
 
 Nothing in that list is special-cased for this repository.
 
+## Two servers, public and private
+
+This image deploys as two applications from one release (qits-2175): `qits-oci-postgresql`,
+declared above, and `qits-oci-postgresql-private`, declared in
+`.config/qits/deployments.private.yml` and deployed beside it. The public server sits on both
+qits-net and qits-private so either kind of consumer can reach it; the private one sits on
+qits-private alone, with no bridge to qits-net (owner ruling 2026-11-13, qits-2174), so a service
+whose own `exposure` is `private` has a database that never touches qits-net at all. Each keeps its
+own data volume and its own wire alias; nothing is shared but the image and the superuser password.
+
 ## Reaching it
 
 Peers dial the wire alias inside the environment's networks:
 
     prod-qits-oci-postgresql:5432
+    prod-qits-oci-postgresql-private:5432
 
 There is no gateway route. Routes are an enum in the gateway and serve HTTP; a TCP peer needs
 neither.
@@ -44,6 +55,11 @@ every time. `qits-poc` never reaches a platform data directory.
 
 The randomized superuser password is recorded in the operator's `.qits-bootstrap.env`. That file is
 the only copy — see *Recovery* below for why losing it hurts.
+
+The private server (above) is the same image with the same mechanism, and the same password: there
+is no second superuser credential to mint. The bootstrap CLI and the deployer's run-args carry the
+one randomized `POSTGRES_PASSWORD` from `.qits-bootstrap.env` to it exactly as they do to the public
+server.
 
 Per-service roles and databases are **not** created here. There are no init scripts in this image.
 A repository asks for a database by declaring it in its own `.config/qits/deployments.yml`:
