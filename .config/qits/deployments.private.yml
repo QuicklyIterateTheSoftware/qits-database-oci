@@ -16,10 +16,10 @@
 # everything it runs against this server (create role and database, a move's extract or ingest, a
 # kept copy's drop) runs in a one-shot container of this image on qits-private alone.
 #
-# THE SAME ADMIN CREDENTIAL AS THE PUBLIC SERVER. `POSTGRES_PASSWORD` is a secret deployment setting
-# of this application, holding the same value as qits-oci-postgresql's, because the deployer has one
-# admin password (`qits.deployments.postgres.admin-password`) for both. It must exist before the
-# first deploy: initdb reads it once, on the empty volume, and never again. See README.md.
+# THE SAME ADMIN CREDENTIAL AS THE PUBLIC SERVER, derived rather than stored: the deployer injects
+# `POSTGRES_PASSWORD` into this application from its own `qits.deployments.postgres.admin-password`,
+# the password it already provisions the public server with. There is no setting row to drift
+# (qits-2175). initdb reads it once, on the empty volume. See README.md.
 application: qits-oci-postgresql-private
 
 # THE SAME IMAGE as the public server, qits/qits-oci-postgresql:<version>. There is nothing in the

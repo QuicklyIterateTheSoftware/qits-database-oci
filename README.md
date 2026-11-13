@@ -57,9 +57,9 @@ The randomized superuser password is recorded in the operator's `.qits-bootstrap
 the only copy — see *Recovery* below for why losing it hurts.
 
 The private server (above) uses the same password, so there is no second superuser credential. The
-bootstrap never starts it; the deployer does. Its `POSTGRES_PASSWORD` is a secret deployment setting
-of `qits-oci-postgresql-private`, holding the same value as `qits-oci-postgresql`'s. It must be set
-before the first deploy, because initdb reads it only on an empty volume.
+bootstrap never starts it; the deployer does, and injects `POSTGRES_PASSWORD` from its own
+`qits.deployments.postgres.admin-password` (qits-2175). No setting row holds a copy. initdb reads it
+only on an empty volume.
 
 Per-service roles and databases are **not** created here. There are no init scripts in this image.
 A repository asks for a database by declaring it in its own `.config/qits/deployments.yml`:
