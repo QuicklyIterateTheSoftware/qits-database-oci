@@ -12,15 +12,14 @@
 # qits-net here and none is coming — the bridge the public server holds is exactly what this variant
 # exists to avoid repeating for private-only data.
 #
-# THE DEPLOYER ITSELF HAS NO STANDING ACCESS to qits-private (qits-2175): the admin console, the
-# bootstrap CLI and every ordinary operator path run from qits-net. Reaching this server for anything
-# the deployer still needs to do in-network — provisioning a resource, a health probe outside the
-# in-container `health_cmd` — happens through a one-shot container placed on qits-private for that
-# single call, never through a standing connection.
+# THE DEPLOYER NEVER CONNECTS TO IT DIRECTLY (qits-2175). qits-deployments sits on qits-net only, so
+# everything it runs against this server (create role and database, a move's extract or ingest, a
+# kept copy's drop) runs in a one-shot container of this image on qits-private alone.
 #
-# THE SAME ADMIN CREDENTIAL AS THE PUBLIC SERVER. There is no second superuser password to mint or
-# store: the bootstrap CLI and the deployer's run-args carry the one randomized `POSTGRES_PASSWORD`
-# that already applies to qits-oci-postgresql, unchanged. See README.md.
+# THE SAME ADMIN CREDENTIAL AS THE PUBLIC SERVER. `POSTGRES_PASSWORD` is a secret deployment setting
+# of this application, holding the same value as qits-oci-postgresql's, because the deployer has one
+# admin password (`qits.deployments.postgres.admin-password`) for both. It must exist before the
+# first deploy: initdb reads it once, on the empty volume, and never again. See README.md.
 application: qits-oci-postgresql-private
 
 # THE SAME IMAGE as the public server, qits/qits-oci-postgresql:<version>. There is nothing in the

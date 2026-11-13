@@ -56,10 +56,10 @@ every time. `qits-poc` never reaches a platform data directory.
 The randomized superuser password is recorded in the operator's `.qits-bootstrap.env`. That file is
 the only copy — see *Recovery* below for why losing it hurts.
 
-The private server (above) is the same image with the same mechanism, and the same password: there
-is no second superuser credential to mint. The bootstrap CLI and the deployer's run-args carry the
-one randomized `POSTGRES_PASSWORD` from `.qits-bootstrap.env` to it exactly as they do to the public
-server.
+The private server (above) uses the same password, so there is no second superuser credential. The
+bootstrap never starts it; the deployer does. Its `POSTGRES_PASSWORD` is a secret deployment setting
+of `qits-oci-postgresql-private`, holding the same value as `qits-oci-postgresql`'s. It must be set
+before the first deploy, because initdb reads it only on an empty volume.
 
 Per-service roles and databases are **not** created here. There are no init scripts in this image.
 A repository asks for a database by declaring it in its own `.config/qits/deployments.yml`:
