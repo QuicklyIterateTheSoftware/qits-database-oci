@@ -40,13 +40,15 @@ update_order: stop-first
 # and a live service already mounting this volume at this target is updated in place, not recreated.
 volumes: private:data:/var/lib/postgresql
 
-# ON BOTH NETWORKS, qits-net AND qits-private (qits-1980, task qits-2122): private services sit on
-# qits-private alone and reach this database by its wire alias, dev-qits-oci-postgresql, so it has
-# to be attached there too. It declares no route, so neither edge serves it; it is the one routeless
-# bridge between the two networks, and every database role keeps its own password. Changing the
-# networks recreates the service once (remove, wait for the old task to stop — qits-2118 refuses to
-# start a second postgres beside it on this volume — then create). Revert: delete this line.
-exposure: both
+# PUBLIC, qits-net alone (epic qits-2174, task qits-2189). It sat on qits-private too (qits-2122)
+# while private services kept their databases here; they now live on qits-oci-postgresql-private
+# (deployments.private.yml), which qits-deployments places a private service on (qits-2175), and
+# nothing private reaches this server any more. The owner's rule: nothing a private service uses
+# sits on qits-net, and no service sits on both networks. Changing the networks recreates the
+# service once (remove, wait for the old task to stop — qits-2118 refuses to start a second postgres
+# beside it on this volume — then create). Revert: never to `both`; a private service that needs a
+# database gets it on the private server.
+exposure: public
 
 # A SECOND APPLICATION FROM THIS SAME IMAGE AND RELEASE (qits-2175): `deployments.private.yml`
 # deploys qits-oci-postgresql-private, the server on qits-private alone for services that must never
